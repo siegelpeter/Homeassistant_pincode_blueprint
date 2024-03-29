@@ -1,6 +1,6 @@
 blueprint:
-  name: Check Keypad Code with PIN
-  description: Compares the code from a keypad text entity with a predefined PIN when a boolean `haschanged` is true.
+  name: Check Keypad Code with PIN and Execute Custom Actions
+  description: Compares the code from a keypad text entity with a predefined PIN when a boolean `haschanged` is true, then executes custom actions defined by the user.
   domain: automation
   input:
     haschanged_boolean:
@@ -15,17 +15,16 @@ blueprint:
       selector:
         entity:
           domain: sensor
-    notify_service:
-      name: Notification Service
-      description: The notification service to use when the correct PIN is entered.
-      selector:
-        entity:
-          domain: notify
     pin_code:
       name: PIN Code
       description: The predefined PIN code to compare with the keypad code.
       selector:
         text:
+    custom_actions:
+      name: Custom Actions
+      description: The actions to execute when the correct PIN is entered.
+      selector:
+        action: {}
 
 trigger:
   - platform: state
@@ -37,7 +36,9 @@ condition:
   - condition: template
     value_template: "{{ states(input('keypad_code_sensor')) == input('pin_code') }}"
 action:
-  - service: !input notify_service
-    data:
-      message: "Correct PIN entered."
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ states(input('keypad_code_sensor')) == input('pin_code') }}"
+        sequence: !input custom_actions
 mode: single
